@@ -2,41 +2,35 @@ name: Build Flutter APK
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.38.4'
           channel: 'stable'
-          cache: true
 
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Clean Flutter & Gradle
+      - name: HARD CLEAN (important)
         run: |
           flutter clean
           rm -rf android/.gradle
-          rm -rf ~/.gradle/caches
+          rm -rf ~/.gradle
 
       - name: Build APK Release
         run: flutter build apk --release

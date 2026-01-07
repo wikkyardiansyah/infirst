@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/registered_employee.dart';
 import '../models/attendance.dart';
@@ -27,18 +28,65 @@ class AdminService {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_employeesKey);
 
+    debugPrint('AdminService.getAllEmployees - jsonString: $jsonString');
+
     if (jsonString == null || jsonString.isEmpty) {
       return [];
     }
 
     try {
       final List<dynamic> jsonList = jsonDecode(jsonString);
-      return jsonList
+      final employees = jsonList
           .map((json) => RegisteredEmployee.fromJson(json))
           .toList();
+      debugPrint('AdminService.getAllEmployees - loaded ${employees.length} employees');
+      return employees;
     } catch (e) {
+      debugPrint('AdminService.getAllEmployees - error: $e');
       return [];
     }
+  }
+
+  /// Inisialisasi data karyawan default untuk testing
+  /// Dipanggil saat aplikasi pertama kali dibuka
+  Future<void> initializeDefaultEmployees() async {
+    final employees = await getAllEmployees();
+    
+    // Jika sudah ada karyawan, tidak perlu menambah default
+    if (employees.isNotEmpty) {
+      debugPrint('initializeDefaultEmployees - employees already exist: ${employees.length}');
+      return;
+    }
+    
+    debugPrint('initializeDefaultEmployees - adding default employees');
+    
+    // Tambahkan karyawan default untuk testing
+    final defaultEmployees = [
+      RegisteredEmployee(
+        id: 'EMP_DEFAULT_001',
+        nama: 'Budi Santoso',
+        email: 'budi@infirst.com',
+        password: 'budi123',
+        jabatan: 'Staff IT',
+        tanggalDaftar: DateTime.now(),
+        isActive: true,
+      ),
+      RegisteredEmployee(
+        id: 'EMP_DEFAULT_002',
+        nama: 'Siti Rahayu',
+        email: 'siti@infirst.com',
+        password: 'siti123',
+        jabatan: 'Staff HRD',
+        tanggalDaftar: DateTime.now(),
+        isActive: true,
+      ),
+    ];
+    
+    for (final emp in defaultEmployees) {
+      await addEmployee(emp);
+    }
+    
+    debugPrint('initializeDefaultEmployees - added ${defaultEmployees.length} default employees');
   }
 
   /// Menyimpan karyawan baru
@@ -71,11 +119,22 @@ class AdminService {
     String password,
   ) async {
     final employees = await getAllEmployees();
+    
+    debugPrint('validateEmployeeLogin - email: $email, password: $password');
+    debugPrint('validateEmployeeLogin - total employees: ${employees.length}');
+    
+    for (final emp in employees) {
+      debugPrint('validateEmployeeLogin - checking: ${emp.email} / ${emp.password} / isActive: ${emp.isActive}');
+    }
+    
     try {
-      return employees.firstWhere(
-        (e) => e.email == email && e.password == password && e.isActive,
+      final found = employees.firstWhere(
+        (e) => e.email.toLowerCase() == email.toLowerCase() && e.password == password && e.isActive,
       );
+      debugPrint('validateEmployeeLogin - found: ${found.email}');
+      return found;
     } catch (e) {
+      debugPrint('validateEmployeeLogin - not found: $e');
       return null;
     }
   }

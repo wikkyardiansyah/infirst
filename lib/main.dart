@@ -5,6 +5,9 @@ import 'package:intl/date_symbol_data_local.dart';
 // Core
 import 'core/theme/brutalism_theme.dart';
 
+// Services
+import 'services/admin_service.dart';
+
 // Providers
 import 'providers/attendance_provider.dart';
 import 'providers/auth_provider.dart';
@@ -46,6 +49,10 @@ void main() async {
   
   // Inisialisasi format tanggal Indonesia
   await initializeDateFormatting('id_ID', null);
+  
+  // Inisialisasi data karyawan default untuk testing
+  final adminService = AdminService();
+  await adminService.initializeDefaultEmployees();
   
   runApp(const MyApp());
 }

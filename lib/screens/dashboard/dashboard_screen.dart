@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/theme/brutalism_theme.dart';
 import '../../providers/attendance_provider.dart';
 import '../../widgets/brutal_widgets.dart';
@@ -21,7 +22,169 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Load data saat screen pertama kali dibuka
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AttendanceProvider>().initialize();
+      _requestLocationPermission();
     });
+  }
+
+  /// Request izin lokasi saat pertama kali masuk dashboard
+  Future<void> _requestLocationPermission() async {
+    try {
+      // Cek apakah layanan lokasi aktif
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Layanan lokasi tidak aktif, tampilkan dialog
+        if (mounted) {
+          _showLocationServiceDialog();
+        }
+        return;
+      }
+
+      // Cek izin lokasi
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        // Minta izin lokasi
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Izin ditolak
+          if (mounted) {
+            _showPermissionDeniedSnackbar();
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // Izin ditolak permanen, arahkan ke pengaturan
+        if (mounted) {
+          _showPermissionPermanentlyDeniedDialog();
+        }
+        return;
+      }
+
+      // Izin diberikan
+      debugPrint('Location permission granted');
+    } catch (e) {
+      debugPrint('Error requesting location permission: $e');
+    }
+  }
+
+  /// Dialog jika layanan lokasi tidak aktif
+  void _showLocationServiceDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: Container(
+          padding: const EdgeInsets.all(BrutalismTheme.spacingS),
+          color: BrutalismTheme.warningOrange,
+          child: const Row(
+            children: [
+              Icon(Icons.location_off, color: BrutalismTheme.primaryBlack),
+              SizedBox(width: 8),
+              Text(
+                'LOKASI NONAKTIF',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: BrutalismTheme.primaryBlack,
+                ),
+              ),
+            ],
+          ),
+        ),
+        content: const Text(
+          'Layanan lokasi pada perangkat Anda tidak aktif. Aktifkan layanan lokasi untuk dapat melakukan presensi.',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('NANTI'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Geolocator.openLocationSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: BrutalismTheme.accentYellow,
+              foregroundColor: BrutalismTheme.primaryBlack,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
+            child: const Text('AKTIFKAN'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Snackbar jika izin ditolak
+  void _showPermissionDeniedSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: BrutalismTheme.errorRed,
+        content: const Text(
+          'Izin lokasi diperlukan untuk fitur presensi',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        action: SnackBarAction(
+          label: 'COBA LAGI',
+          textColor: BrutalismTheme.accentYellow,
+          onPressed: _requestLocationPermission,
+        ),
+      ),
+    );
+  }
+
+  /// Dialog jika izin ditolak permanen
+  void _showPermissionPermanentlyDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: Container(
+          padding: const EdgeInsets.all(BrutalismTheme.spacingS),
+          color: BrutalismTheme.errorRed,
+          child: const Row(
+            children: [
+              Icon(Icons.location_disabled, color: BrutalismTheme.primaryWhite),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'IZIN LOKASI DITOLAK',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: BrutalismTheme.primaryWhite,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        content: const Text(
+          'Izin lokasi telah ditolak secara permanen. Buka pengaturan aplikasi untuk mengaktifkan izin lokasi.',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('BATAL'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Geolocator.openAppSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: BrutalismTheme.accentBlue,
+              foregroundColor: BrutalismTheme.primaryWhite,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
+            child: const Text('BUKA PENGATURAN'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

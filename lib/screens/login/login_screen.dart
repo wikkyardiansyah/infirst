@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/brutalism_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/admin_provider.dart';
+import '../../providers/attendance_provider.dart';
 import '../../widgets/brutal_widgets.dart';
 import '../admin/admin_dashboard_screen.dart';
 
@@ -48,15 +49,26 @@ class _LoginScreenState extends State<LoginScreen> {
           await context.read<AdminProvider>().loadAllData();
           
           if (mounted) {
-            Navigator.pushReplacement(
+            Navigator.pushNamedAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                builder: (_) => const AdminDashboardScreen(),
-              ),
+              '/admin',
+              (route) => false,
+            );
+          }
+        } else {
+          // Login sebagai karyawan - inisialisasi attendance dan navigasi ke main
+          await context.read<AttendanceProvider>().initializeWithEmail(
+            _emailController.text.trim(),
+          );
+          
+          if (mounted) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/main',
+              (route) => false,
             );
           }
         }
-        // Jika login sebagai karyawan, akan otomatis handled oleh Consumer di main.dart
       } else if (!result.success && mounted) {
         setState(() {
           _errorMessage = result.message;

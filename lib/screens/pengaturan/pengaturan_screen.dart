@@ -542,6 +542,14 @@ class PengaturanScreen extends StatelessWidget {
               // Clear attendance data saat logout
               await context.read<AttendanceProvider>().clearOnLogout();
               await context.read<AuthProvider>().logout();
+              // Navigasi ke login screen
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: BrutalismTheme.warningOrange,

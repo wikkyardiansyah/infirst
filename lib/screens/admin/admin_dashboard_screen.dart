@@ -320,6 +320,7 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _selectedIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<String> _menuTitles = [
     'Dashboard',
@@ -337,9 +338,66 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width > 800;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth > 800;
+    final isMobile = screenWidth < 600;
 
+    // Untuk mobile, gunakan drawer + bottom navigation
+    if (isMobile) {
+      return Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          backgroundColor: BrutalismTheme.primaryBlack,
+          foregroundColor: BrutalismTheme.accentYellow,
+          title: Text(
+            _menuTitles[_selectedIndex],
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () => _showLogoutConfirmation(context),
+            ),
+          ],
+        ),
+        body: _buildContent(),
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: BrutalismTheme.primaryBlack,
+            border: Border(
+              top: BorderSide(color: BrutalismTheme.accentYellow, width: 2),
+            ),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: BrutalismTheme.primaryBlack,
+            selectedItemColor: BrutalismTheme.accentYellow,
+            unselectedItemColor: BrutalismTheme.lightGrey,
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+            items: List.generate(
+              _menuTitles.length,
+              (index) => BottomNavigationBarItem(
+                icon: Icon(_menuIcons[index]),
+                label: _menuTitles[index],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Untuk tablet dan desktop, gunakan sidebar
     return Scaffold(
+      key: _scaffoldKey,
       body: Row(
         children: [
           // Sidebar
@@ -525,9 +583,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               // Logout auth provider juga
               context.read<AuthProvider>().logout();
               // Redirect ke halaman login utama
-              Navigator.pushAndRemoveUntil(
+              Navigator.pushNamedAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                '/login',
                 (route) => false,
               );
             },
@@ -555,6 +613,9 @@ class _DashboardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Consumer<AdminProvider>(
       builder: (context, provider, _) {
         if (provider.isLoading) {
@@ -562,25 +623,25 @@ class _DashboardContent extends StatelessWidget {
         }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(BrutalismTheme.spacingL),
+          padding: EdgeInsets.all(isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'DASHBOARD OVERVIEW',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: isMobile ? 18 : 24,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                 ),
               ),
 
-              const SizedBox(height: BrutalismTheme.spacingL),
+              SizedBox(height: isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
 
               // Stats Cards
               Wrap(
-                spacing: BrutalismTheme.spacingM,
-                runSpacing: BrutalismTheme.spacingM,
+                spacing: isMobile ? BrutalismTheme.spacingS : BrutalismTheme.spacingM,
+                runSpacing: isMobile ? BrutalismTheme.spacingS : BrutalismTheme.spacingM,
                 children: [
                   _StatCard(
                     title: 'Total Karyawan',
@@ -708,33 +769,39 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final cardWidth = isMobile 
+        ? (screenWidth - BrutalismTheme.spacingL * 2 - BrutalismTheme.spacingM) / 2 
+        : 200.0;
+    
     return Container(
-      width: 200,
-      padding: const EdgeInsets.all(BrutalismTheme.spacingM),
+      width: cardWidth,
+      padding: EdgeInsets.all(isMobile ? BrutalismTheme.spacingS : BrutalismTheme.spacingM),
       decoration: BoxDecoration(
         color: color,
         border: Border.all(
           color: BrutalismTheme.primaryBlack,
-          width: 3,
+          width: isMobile ? 2 : 3,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: BrutalismTheme.primaryBlack, size: 32),
-          const SizedBox(height: BrutalismTheme.spacingS),
+          Icon(icon, color: BrutalismTheme.primaryBlack, size: isMobile ? 24 : 32),
+          SizedBox(height: isMobile ? 4 : BrutalismTheme.spacingS),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 28,
+            style: TextStyle(
+              fontSize: isMobile ? 20 : 28,
               fontWeight: FontWeight.w900,
               color: BrutalismTheme.primaryBlack,
             ),
           ),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 12,
               fontWeight: FontWeight.w700,
               color: BrutalismTheme.primaryBlack,
             ),
@@ -814,40 +881,74 @@ class _EmployeeContentState extends State<_EmployeeContent> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Consumer<AdminProvider>(
       builder: (context, provider, _) {
         return Padding(
-          padding: const EdgeInsets.all(BrutalismTheme.spacingL),
+          padding: EdgeInsets.all(isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'KELOLA KARYAWAN',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _showAddEmployeeDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('TAMBAH'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: BrutalismTheme.successGreen,
-                      foregroundColor: BrutalismTheme.primaryWhite,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero,
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'KELOLA KARYAWAN',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
                       ),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: BrutalismTheme.spacingS),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _showAddEmployeeDialog,
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('TAMBAH KARYAWAN'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: BrutalismTheme.successGreen,
+                          foregroundColor: BrutalismTheme.primaryWhite,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'KELOLA KARYAWAN',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _showAddEmployeeDialog,
+                      icon: const Icon(Icons.add),
+                      label: const Text('TAMBAH'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: BrutalismTheme.successGreen,
+                        foregroundColor: BrutalismTheme.primaryWhite,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
-              const SizedBox(height: BrutalismTheme.spacingL),
+              SizedBox(height: isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
 
               // Success/Error Messages
               if (provider.successMessage != null)
@@ -1033,40 +1134,74 @@ class _AttendanceContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Consumer<AdminProvider>(
       builder: (context, provider, _) {
         return Padding(
-          padding: const EdgeInsets.all(BrutalismTheme.spacingL),
+          padding: EdgeInsets.all(isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'DATA PRESENSI',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () => provider.refresh(),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('REFRESH'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: BrutalismTheme.accentBlue,
-                      foregroundColor: BrutalismTheme.primaryWhite,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero,
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DATA PRESENSI',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
                       ),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: BrutalismTheme.spacingS),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => provider.refresh(),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('REFRESH DATA'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: BrutalismTheme.accentBlue,
+                          foregroundColor: BrutalismTheme.primaryWhite,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'DATA PRESENSI',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => provider.refresh(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('REFRESH'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: BrutalismTheme.accentBlue,
+                        foregroundColor: BrutalismTheme.primaryWhite,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
-              const SizedBox(height: BrutalismTheme.spacingL),
+              SizedBox(height: isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
 
               // Attendance Records
               Expanded(
@@ -1145,30 +1280,33 @@ class _ReportContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Consumer<AdminProvider>(
       builder: (context, provider, _) {
         final stats = provider.stats;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(BrutalismTheme.spacingL),
+          padding: EdgeInsets.all(isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'LAPORAN KEHADIRAN',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: isMobile ? 18 : 24,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                 ),
               ),
 
-              const SizedBox(height: BrutalismTheme.spacingL),
+              SizedBox(height: isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
 
               // Summary Cards
               Wrap(
-                spacing: BrutalismTheme.spacingM,
-                runSpacing: BrutalismTheme.spacingM,
+                spacing: isMobile ? BrutalismTheme.spacingS : BrutalismTheme.spacingM,
+                runSpacing: isMobile ? BrutalismTheme.spacingS : BrutalismTheme.spacingM,
                 children: [
                   _ReportCard(
                     title: 'Total Karyawan Terdaftar',
@@ -1310,14 +1448,20 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final cardWidth = isMobile 
+        ? (screenWidth - BrutalismTheme.spacingM * 2 - BrutalismTheme.spacingS) / 2 
+        : 220.0;
+    
     return Container(
-      width: 220,
-      padding: const EdgeInsets.all(BrutalismTheme.spacingL),
+      width: cardWidth,
+      padding: EdgeInsets.all(isMobile ? BrutalismTheme.spacingM : BrutalismTheme.spacingL),
       decoration: BoxDecoration(
         color: color,
         border: Border.all(
           color: BrutalismTheme.primaryBlack,
-          width: 3,
+          width: isMobile ? 2 : 3,
         ),
       ),
       child: Column(
@@ -1325,8 +1469,8 @@ class _ReportCard extends StatelessWidget {
         children: [
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 36,
+            style: TextStyle(
+              fontSize: isMobile ? 24 : 36,
               fontWeight: FontWeight.w900,
               color: BrutalismTheme.primaryBlack,
             ),
@@ -1334,8 +1478,8 @@ class _ReportCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 12,
               fontWeight: FontWeight.w700,
               color: BrutalismTheme.primaryBlack,
             ),

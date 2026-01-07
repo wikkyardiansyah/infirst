@@ -4,6 +4,14 @@
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
     
+    <!-- Location permissions untuk GPS presensi -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    
+    <!-- Internet permission untuk geocoding -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    
     <application
         android:label="infirst"
         android:name="${applicationName}"

@@ -82,9 +82,10 @@ class MyApp extends StatelessWidget {
               homeScreen = const LoginScreen();
             }
           } else if (authProvider.isAdmin) {
-            // Admin login - tampilkan halaman login untuk redirect ke admin dashboard
-            homeScreen = const LoginScreen();
+            // Admin sudah login - langsung ke admin dashboard
+            homeScreen = const AdminDashboardScreen();
           } else {
+            // Karyawan sudah login - langsung ke main navigation
             homeScreen = const MainNavigationWrapper();
           }
           
@@ -98,6 +99,13 @@ class MyApp extends StatelessWidget {
             themeMode: themeProvider.themeMode,
 
             home: homeScreen,
+            
+            // Named routes untuk navigasi setelah login
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/main': (context) => const MainNavigationWrapper(),
+              '/admin': (context) => const AdminDashboardScreen(),
+            },
           );
         },
       ),

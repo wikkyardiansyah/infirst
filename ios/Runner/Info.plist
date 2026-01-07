@@ -49,5 +49,11 @@
 	<string>Aplikasi membutuhkan akses kamera untuk foto selfie saat check-in dan check-out presensi.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Aplikasi membutuhkan akses galeri untuk menyimpan foto selfie presensi.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikasi membutuhkan akses lokasi untuk mencatat lokasi presensi Anda saat check-in dan check-out.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Aplikasi membutuhkan akses lokasi untuk mencatat lokasi presensi Anda.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Aplikasi membutuhkan akses lokasi untuk mencatat lokasi presensi Anda saat check-in dan check-out.</string>
 </dict>
 </plist>
